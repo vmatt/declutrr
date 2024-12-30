@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "declutrr"
+version = "0.1.0"
+authors = [
+  { name="Mate Valko", email="declutrr@valq.hu" },
+]
+description = "A Date-app-like interface for rapidly sorting photos"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/vmatt/declutrr"
+"Bug Tracker" = "https://github.com/vmatt/declutrr/issues"

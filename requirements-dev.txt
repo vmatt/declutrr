@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest  # For testing
+build  # For package building
+twine  # For PyPI uploads
