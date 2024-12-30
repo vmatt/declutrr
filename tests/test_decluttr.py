@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock
 import tkinter as tk
 from PIL import Image
 from declutrr.constants import *
-from declutrr.declutrr import ImageSorter
+from declutrr.app import ImageSorter
 from declutrr.image_processor import ImageProcessor
 from tests.generate_test_images import create_test_images
 
@@ -65,7 +65,7 @@ class TestImageSorter(unittest.TestCase):
         self.assertIsInstance(self.app.root, tk.Tk)
         self.assertEqual(self.app.root.title(), STARTUP_TITLE)
 
-    @patch('declutrr.photo_swiper.get_directory')
+    @patch('declutrr.app.get_directory')
     def test_start_processing_no_directory(self, mock_get_directory):
         """Test start_processing when no directory is selected"""
         mock_get_directory.return_value = None

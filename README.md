@@ -29,12 +29,12 @@ Launch declutrr PhotoSwiper in one of two ways:
 
 1. Without a directory specified:
 ```bash
-python photo_swiper.py
+python declutrr.py
 ```
 
 2. With a specific directory:
 ```bash
-python photo_swiper.py /path/to/your/photos
+python declutrr.py /path/to/your/photos
 ```
 
 ### Controls
