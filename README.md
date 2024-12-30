@@ -17,30 +17,17 @@ A Date-app-like interface for rapidly sorting photos into "keep" and "delete" ca
 
 ## 🚀 Installation
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/NamiLinkLabs/declutrr.git
-cd declutrr
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
+pip install declutrr
 ```
 
 ## Usage
 
-Launch declutrr PhotoSwiper in one of two ways:
-
-1. Without a directory specified:
+Launch declutrr from terminal/command line
 ```bash
-python declutrr.py
+declutrr
 ```
 
-2. With a specific directory:
-```bash
-python declutrr.py /path/to/your/photos
-```
 
 ### Controls
 - **→ (Right Arrow)**: Keep photo
