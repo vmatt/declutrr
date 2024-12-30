@@ -21,6 +21,6 @@ ACTION_KEEP = "keep"
 PADDING = {'padx': 5, 'pady': 5}
 
 # Dialog messages
-STARTUP_TITLE = "declutrr PhotoSwiper"
+STARTUP_TITLE = "Declutrr"
 COMPLETION_TITLE = "Processing Complete"
 COMPLETION_MESSAGE = "Would you like to process another folder?"

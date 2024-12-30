@@ -1,4 +1,4 @@
-# 🎯 Declutter
+# 🎯 Declutrr
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://pypi.org/project/declutrr/)
 [![Coverage](https://img.shields.io/codecov/c/github/vmatt/declutrr)](https://codecov.io/gh/vmatt/declutrr)
