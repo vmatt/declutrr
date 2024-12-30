@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://pypi.org/project/declutrr/)
 [![Coverage](https://img.shields.io/codecov/c/github/vmatt/declutrr)](https://codecov.io/gh/vmatt/declutrr)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Date-app-like interface for rapidly sorting photos into "keep" and "delete" categories. Perfect for photographers who need to quickly curate large collections of images.
 ![Screenshot of the app](declutrr.png)
 ## ✨ Features
