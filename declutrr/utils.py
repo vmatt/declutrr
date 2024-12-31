@@ -57,7 +57,7 @@ def get_directory() -> str | None:
     
     directory = filedialog.askdirectory(
         title='Select folder with images to process',
-        initialdir='~'
+        initialdir=os.getcwd()
     )
     
     return directory
