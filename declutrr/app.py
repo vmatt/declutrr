@@ -21,6 +21,7 @@ class ImageSorter:
         self.processor = None
         self.delete_dir = None
         self.keep_dir = None
+        self.use_arrows = tk.BooleanVar(value=True)
         
         # UI components
         self.main_frame = None
@@ -47,10 +48,27 @@ class ImageSorter:
         dialog_frame = ttk.Frame(self.root, padding="20")
         dialog_frame.pack(expand=True, fill='both')
         
-        ttk.Button(dialog_frame, text="Open Folder", 
+        # Key binding toggle
+        key_frame = ttk.Frame(dialog_frame)
+        key_frame.pack(pady=10)
+        ttk.Label(key_frame, text="Controls (T): ").pack(side='left', padx=5)
+        ttk.Radiobutton(key_frame, text="Arrow Keys", variable=self.use_arrows, 
+                       value=True, command=self.update_button_labels).pack(side='left', padx=5)
+        ttk.Radiobutton(key_frame, text="J/K/L Keys", variable=self.use_arrows, 
+                       value=False, command=self.update_button_labels).pack(side='left', padx=5)
+        
+        ttk.Button(dialog_frame, text="Open Folder (O)", 
                   command=self.start_processing).pack(pady=10)
-        ttk.Button(dialog_frame, text="Quit", 
+        ttk.Button(dialog_frame, text="Quit (Q)", 
                   command=self.root.quit).pack(pady=10)
+        
+        # Bind startup hotkeys
+        self.root.bind('o', lambda e: self.start_processing())
+        self.root.bind('O', lambda e: self.start_processing())
+        self.root.bind('q', lambda e: self.root.quit())
+        self.root.bind('Q', lambda e: self.root.quit())
+        self.root.bind('t', lambda e: self.use_arrows.set(not self.use_arrows.get()))
+        self.root.bind('T', lambda e: self.use_arrows.set(not self.use_arrows.get()))
 
     def start_processing(self):
         """Initialize the image processing interface."""
@@ -67,11 +85,9 @@ class ImageSorter:
         # Initialize image processor
         self.processor = ImageProcessor(self.directory)
         
-        # Initialize directories
+        # Initialize delete directory
         self.delete_dir = os.path.join(self.directory, 'delete')
-        self.keep_dir = os.path.join(self.directory, 'keep')
         os.makedirs(self.delete_dir, exist_ok=True)
-        os.makedirs(self.keep_dir, exist_ok=True)
 
         # Initialize UI components
         self.main_frame = None
@@ -122,25 +138,59 @@ class ImageSorter:
         self.controls_frame.pack(fill='x', pady=10)
         
         # Left-side buttons
-        ttk.Button(self.controls_frame, text="Quit", command=self.root.quit).pack(side='left', padx=5)
-        ttk.Button(self.controls_frame, text="Choose Folder", command=self.reset_and_restart).pack(side='left', padx=5)
+        ttk.Button(self.controls_frame, text="Quit (Q)", command=self.root.quit).pack(side='left', padx=5)
+        ttk.Button(self.controls_frame, text="Open Folder (O)", command=self.reset_and_restart).pack(side='left', padx=5)
         ttk.Button(self.controls_frame, text="Undo (Z)", command=self.undo_last_action).pack(side='left', padx=5)
         
-        # Right-side buttons
-        ttk.Button(self.controls_frame, text="Keep →", command=self.keep_image).pack(side='right', padx=5)
-        ttk.Button(self.controls_frame, text="↓ Skip", command=self.skip_image).pack(side='right', padx=5)
-        ttk.Button(self.controls_frame, text="← Delete", command=self.delete_image).pack(side='right', padx=5)
+        # Right-side buttons with dynamic labels
+        bindings = KEY_BINDINGS['arrows'] if self.use_arrows.get() else KEY_BINDINGS['letters']
+        ttk.Button(self.controls_frame, text=bindings['labels']['keep'], 
+                  command=self.keep_image).pack(side='right', padx=5)
+        ttk.Button(self.controls_frame, text=bindings['labels']['skip'], 
+                  command=self.skip_image).pack(side='right', padx=5)
+        ttk.Button(self.controls_frame, text=bindings['labels']['delete'], 
+                  command=self.delete_image).pack(side='right', padx=5)
 
         # Status bar
         self.status_var = tk.StringVar()
         self.status_bar = ttk.Label(self.main_frame, textvariable=self.status_var)
         self.status_bar.pack(fill='x', pady=(10, 0))
         
+    def update_button_labels(self):
+        """Update button labels based on current control scheme"""
+        if not hasattr(self, 'controls_frame') or not self.controls_frame:
+            return
+            
+        # Get current button labels
+        bindings = KEY_BINDINGS['arrows'] if self.use_arrows.get() else KEY_BINDINGS['letters']
+        
+        # Update button labels
+        for button in self.controls_frame.winfo_children():
+            if isinstance(button, ttk.Button):
+                if "Keep" in button['text'] or "→" in button['text'] or "(L)" in button['text']:
+                    button['text'] = bindings['labels']['keep']
+                elif "Skip" in button['text'] or "↓" in button['text'] or "(K)" in button['text']:
+                    button['text'] = bindings['labels']['skip']
+                elif "Delete" in button['text'] or "←" in button['text'] or "(J)" in button['text']:
+                    button['text'] = bindings['labels']['delete']
+        
+        # Rebind keys
+        self.bind_keys()
+
     def bind_keys(self):
-        self.root.bind('<Left>', lambda e: self.delete_image())
-        self.root.bind('<Right>', lambda e: self.keep_image())
-        self.root.bind('<Down>', lambda e: self.skip_image())
+        # Always bind undo and global controls
         self.root.bind('z', lambda e: self.undo_last_action())
+        self.root.bind('Z', lambda e: self.undo_last_action())
+        self.root.bind('q', lambda e: self.root.quit())
+        self.root.bind('Q', lambda e: self.root.quit())
+        self.root.bind('o', lambda e: self.reset_and_restart())
+        self.root.bind('O', lambda e: self.reset_and_restart())
+        
+        # Bind based on user preference
+        bindings = KEY_BINDINGS['arrows'] if self.use_arrows.get() else KEY_BINDINGS['letters']
+        self.root.bind(bindings['delete'], lambda e: self.delete_image())
+        self.root.bind(bindings['keep'], lambda e: self.keep_image())
+        self.root.bind(bindings['skip'], lambda e: self.skip_image())
         
     def load_directory(self):
         # Get list of images sorted by creation date
@@ -154,6 +204,9 @@ class ImageSorter:
         
     def display_current_image(self) -> None:
         """Display the current image and update status."""
+        if not hasattr(self, 'status_var') or not self.status_var:
+            return
+            
         if self.current_index >= len(self.image_files):
             self.current_index = 0
             
@@ -186,9 +239,9 @@ class ImageSorter:
         
         ttk.Label(dialog_frame, text=COMPLETION_MESSAGE).pack(pady=10)
         
-        ttk.Button(dialog_frame, text="Process Another Folder", 
+        ttk.Button(dialog_frame, text="Process Another Folder (O)",
                   command=self.reset_and_restart).pack(pady=10)
-        ttk.Button(dialog_frame, text="Quit", 
+        ttk.Button(dialog_frame, text="Quit (Q)",
                   command=self.root.quit).pack(pady=10)
 
 
@@ -220,6 +273,18 @@ class ImageSorter:
         filename = self.image_files[self.current_index]
         filepath = os.path.join(self.directory, filename)
         self.current_image = self.processor.load_image(filepath)
+        
+        if self.current_image is None:
+            # File was deleted or can't be opened, mark it as deleted
+            self.image_status[filename] = STATUS_DELETED
+            self.stats[STATUS_DELETED] += 1
+            # Move to next image
+            self.current_index += 1
+            if self.current_index >= len(self.image_files):
+                self.current_index = 0
+            self.display_current_image()
+            return
+            
         self.resize_image()
 
     def _update_status_bar(self) -> None:
@@ -295,7 +360,11 @@ class ImageSorter:
         if self.image_status.get(current_file) in ['deleted', 'kept']:
             return
             
-        self.processor.move_to_keep(current_file)
+        filepath = os.path.join(self.directory, current_file)
+        if not self.processor.mark_as_kept(filepath):
+            return  # Failed to rename file
+        # Update current_file to include G_ prefix
+        current_file = f"G_{current_file}"
         self.history.append((current_file, "keep"))
         self.stats["kept"] += 1
         self.image_status[current_file] = 'kept'
@@ -343,9 +412,12 @@ class ImageSorter:
             self.stats["deleted"] -= 1
             
         elif action == "keep":
-            # Move file back from keep folder
-            self.processor.restore_from_keep(filename)
-            self.stats["kept"] -= 1
+            # Remove G_ prefix from filename
+            filepath = os.path.join(self.directory, filename)
+            if os.path.exists(filepath):
+                from declutrr.file_manager import unmark_as_kept
+                if unmark_as_kept(filepath):
+                    self.stats["kept"] -= 1
             
         # Remove the status for this file, so it can be processed again
         if filename in self.image_status:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "declutrr"
-version = "0.1.0"
+version = "0.1.2"
 description = "A Date-app-like interface for rapidly sorting photos"
 authors = ["Mate Valko <declutrr@valq.hu>"]
 license = "MIT"
@@ -25,6 +25,7 @@ packages = [{include = "declutrr"}]
 python = "^3.10"
 Pillow = "^11.0.0"
 
+
 [tool.poetry.extras]
 tools = [
     "ultralytics",
@@ -36,6 +37,7 @@ pytest = "*"
 pytest-cov = "*"
 build = "*"
 twine = "*"
+piexif = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

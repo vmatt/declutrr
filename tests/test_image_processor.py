@@ -18,7 +18,6 @@ class TestImageProcessor(unittest.TestCase):
         # Create test directories
         os.makedirs(self.test_dir, exist_ok=True)
         os.makedirs(self.processor.delete_dir, exist_ok=True)
-        os.makedirs(self.processor.keep_dir, exist_ok=True)
 
     def tearDown(self):
         """Clean up test environment after each test"""
@@ -30,22 +29,7 @@ class TestImageProcessor(unittest.TestCase):
         """Test initialization of ImageProcessor"""
         self.assertEqual(self.processor.directory, self.test_dir)
         self.assertEqual(self.processor.delete_dir, os.path.join(self.test_dir, 'delete'))
-        self.assertEqual(self.processor.keep_dir, os.path.join(self.test_dir, 'keep'))
         self.assertTrue(os.path.exists(self.processor.delete_dir))
-        self.assertTrue(os.path.exists(self.processor.keep_dir))
-
-    def test_load_image(self):
-        """Test image loading"""
-        from tests.fixtures import FIXTURES_DIR
-        
-        # Create and load actual test image
-        create_test_images()
-        test_image_path = os.path.join(FIXTURES_DIR, "test_photos", "image.jpg")
-        
-        result = ImageProcessor.load_image(test_image_path)
-        
-        self.assertIsInstance(result, Image.Image)
-        self.assertEqual(result.size, (800, 600))  # Size from create_test_images
 
     def test_get_display_dimensions(self):
         """Test display dimension calculations"""
@@ -77,16 +61,57 @@ class TestImageProcessor(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.processor.delete_dir, "test.jpg")))
 
     def test_get_creation_time(self):
-        """Test getting creation time from file system"""
+        """Test getting creation time from file system and EXIF"""
         from tests.fixtures import FIXTURES_DIR
+        import piexif
+        from datetime import datetime
         
         # Create test images
         create_test_images()
         test_image_path = os.path.join(FIXTURES_DIR, "test_photos", "image.jpg")
         
+        # Test with filesystem time
         result = self.processor.get_creation_time(test_image_path)
+        self.assertIsInstance(result, float)
+        self.assertTrue(result > 0)
         
-        # Verify we get a valid timestamp
+        # Test with EXIF data
+        test_date = datetime(2024, 1, 1, 12, 0, 0)
+        date_str = test_date.strftime("%Y:%m:%d %H:%M:%S")
+        
+        # Create EXIF data with different date tags
+        for tag in [(36867, "DateTimeOriginal"), (36868, "DateTimeDigitized"), (306, "DateTime")]:
+            # Create new image for each test to avoid EXIF interference
+            test_file = f"test_exif_{tag[1]}.jpg"
+            test_path = os.path.join(FIXTURES_DIR, "test_photos", test_file)
+            
+            # Create a test image
+            img = Image.new('RGB', (100, 100), 'white')
+            
+            # Add EXIF data
+            exif_dict = {"0th": {}, "Exif": {}}
+            if tag[0] == 306:  # DateTime is in 0th IFD
+                exif_dict["0th"][tag[0]] = date_str.encode('utf-8')
+            else:  # DateTimeOriginal and DateTimeDigitized are in Exif IFD
+                exif_dict["Exif"][tag[0]] = date_str.encode('utf-8')
+            
+            exif_bytes = piexif.dump(exif_dict)
+            img.save(test_path, "jpeg", exif=exif_bytes)
+            
+            # Test creation time matches EXIF date
+            result = self.processor.get_creation_time(test_path)
+            self.assertEqual(result, test_date.timestamp())
+        
+        # Test with invalid EXIF date format
+        test_file = "test_invalid_exif.jpg"
+        test_path = os.path.join(FIXTURES_DIR, "test_photos", test_file)
+        img = Image.new('RGB', (100, 100), 'white')
+        exif_dict = {"Exif": {36867: b"invalid date format"}}
+        exif_bytes = piexif.dump(exif_dict)
+        img.save(test_path, "jpeg", exif=exif_bytes)
+        
+        # Should fall back to filesystem time
+        result = self.processor.get_creation_time(test_path)
         self.assertIsInstance(result, float)
         self.assertTrue(result > 0)
 

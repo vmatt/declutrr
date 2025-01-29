@@ -1,11 +1,12 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 from os import PathLike
 import os
-import shutil
 import logging
+import shutil
 
 from PIL import Image
 from declutrr.constants import *
+from declutrr.file_manager import is_kept_file, mark_as_kept
 
 PathType = Union[str, PathLike[str]]
 
@@ -14,14 +15,55 @@ class ImageProcessor:
     def __init__(self, base_directory: str):
         self.directory = base_directory
         self.delete_dir = os.path.join(base_directory, 'delete')
-        self.keep_dir = os.path.join(base_directory, 'keep')
         os.makedirs(self.delete_dir, exist_ok=True)
-        os.makedirs(self.keep_dir, exist_ok=True)
 
     @staticmethod
-    def load_image(filepath: str) -> Image.Image:
-        """Load an image from the given filepath."""
-        return Image.open(filepath)
+    def load_image(filepath: str) -> Image.Image | None:
+        """
+        Load an image from the given filepath and apply EXIF rotation if needed.
+        Returns None if file doesn't exist or can't be opened.
+        """
+        if not os.path.exists(filepath):
+            return None
+            
+        image = None
+        try:
+            image = Image.open(filepath)
+            # Get EXIF data
+            exif = image._getexif()
+            if exif is not None:
+                # EXIF orientation tag
+                orientation = exif.get(274)  # 274 is the orientation tag
+                if orientation is not None:
+                    # Create new image with correct dimensions for 90/270 degree rotations
+                    if orientation in [5, 6, 7, 8]:
+                        # For 90° or 270° rotations, swap width and height
+                        new_width = image.height
+                        new_height = image.width
+                        rotated_image = Image.new(image.mode, (new_width, new_height))
+                    else:
+                        rotated_image = Image.new(image.mode, image.size)
+
+                    # Rotate and/or flip based on EXIF orientation
+                    if orientation == 2:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 3:
+                        image = image.rotate(180, expand=True)
+                    elif orientation == 4:
+                        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+                    elif orientation == 5:
+                        image = image.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 6:
+                        image = image.rotate(-90, expand=True)
+                    elif orientation == 7:
+                        image = image.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 8:
+                        image = image.rotate(90, expand=True)
+
+        except Exception as e:
+            logging.warning(f"Error processing EXIF rotation for {filepath}: {e}")
+            
+        return image
 
     @staticmethod
     def get_display_dimensions(window_width: int, window_height: int) -> Tuple[int, int]:
@@ -39,6 +81,16 @@ class ImageProcessor:
         """Move a file between directories."""
         source = os.path.join(source_dir, filename)
         destination = os.path.join(dest_dir, filename)
+        
+        # Ensure destination doesn't exist
+        if os.path.exists(destination):
+            base, ext = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(destination):
+                new_name = f"{base}_{counter}{ext}"
+                destination = os.path.join(dest_dir, new_name)
+                counter += 1
+                
         shutil.move(source, destination)
 
     def move_to_delete(self, filename: str) -> None:
@@ -49,13 +101,10 @@ class ImageProcessor:
         """Restore file from delete directory."""
         self.move_file(filename, self.delete_dir, self.directory)
 
-    def restore_from_keep(self, filename: str) -> None:
-        """Restore file from keep directory."""
-        self.move_file(filename, self.keep_dir, self.directory)
 
-    def move_to_keep(self, filename: str) -> None:
-        """Move file to keep directory."""
-        self.move_file(filename, self.directory, self.keep_dir)
+    def mark_as_kept(self, filepath: str) -> bool:
+        """Mark file as kept by adding G_ prefix."""
+        return mark_as_kept(filepath)
 
     @staticmethod
     def get_creation_time(filepath: str) -> float:
@@ -85,11 +134,20 @@ class ImageProcessor:
 
     def get_image_files(self) -> list[str]:
         """Get list of valid image files in directory, sorted by creation date."""
-        files = [
-            f for f in os.listdir(self.directory)
-            if f.lower().endswith(VALID_IMAGE_EXTENSIONS) and 
-            os.path.isfile(os.path.join(self.directory, f))
-        ]
+        files = []
+        for f in os.listdir(self.directory):
+            if not f.lower().endswith(VALID_IMAGE_EXTENSIONS):
+                continue
+                
+            filepath = os.path.join(self.directory, f)
+            if not os.path.isfile(filepath):
+                continue
+                
+            # Skip files that are marked as kept with G_ prefix
+            if is_kept_file(filepath):
+                continue
+                
+            files.append(f)
         
         # Sort files by creation time (EXIF or filesystem)
         return sorted(
