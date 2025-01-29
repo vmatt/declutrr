@@ -1,6 +1,5 @@
 import os
 import logging
-from typing import Tuple
 
 
 def is_kept_file(filepath: str) -> bool:
