@@ -30,10 +30,27 @@ declutrr
 
 
 ### Controls
+You can choose between two control schemes:
+
+**Arrow Keys (Default)**
 - **→ (Right Arrow)**: Keep photo
 - **← (Left Arrow)**: Delete photo
 - **↓ (Down Arrow)**: Skip photo
+
+**Vim-style Keys**
+- **L**: Keep photo
+- **J**: Delete photo
+- **K**: Skip photo
+
+**Global Controls**
 - **Z**: Undo last action
+- **O**: Open new folder
+- **Q**: Quit application
+- **T**: Toggle between Arrow/JKL controls
+
+### File Organization
+- Kept photos are prefixed with "G_"
+- Deleted photos are moved to a "delete" subfolder
 
 ## 📋 Requirements
 
