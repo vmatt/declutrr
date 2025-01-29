@@ -293,8 +293,11 @@ class ImageSorter:
         if self.image_status.get(current_file) in ['deleted', 'kept']:
             return
             
-        if not self.processor.mark_as_keep(current_file):
-            return  # Failed to add tag
+        filepath = os.path.join(self.directory, current_file)
+        if not self.processor.mark_as_kept(filepath):
+            return  # Failed to rename file
+        # Update current_file to include G_ prefix
+        current_file = f"G_{current_file}"
         self.history.append((current_file, "keep"))
         self.stats["kept"] += 1
         self.image_status[current_file] = 'kept'
@@ -342,9 +345,12 @@ class ImageSorter:
             self.stats["deleted"] -= 1
             
         elif action == "keep":
-            # For keep actions, we can't remove the tag easily
-            # Just update our internal state
-            self.stats["kept"] -= 1
+            # Remove G_ prefix from filename
+            filepath = os.path.join(self.directory, filename)
+            if os.path.exists(filepath):
+                from declutrr.file_manager import unmark_as_kept
+                if unmark_as_kept(filepath):
+                    self.stats["kept"] -= 1
             
         # Remove the status for this file, so it can be processed again
         if filename in self.image_status:

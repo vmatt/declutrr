@@ -6,7 +6,7 @@ import shutil
 
 from PIL import Image
 from declutrr.constants import *
-from declutrr.tag_manager import get_file_tags, add_green_tag
+from declutrr.file_manager import is_kept_file, mark_as_kept
 
 PathType = Union[str, PathLike[str]]
 
@@ -97,10 +97,9 @@ class ImageProcessor:
         self.move_file(filename, self.delete_dir, self.directory)
 
 
-    def mark_as_keep(self, filename: str) -> bool:
-        """Mark file as keep by adding green tag."""
-        filepath = os.path.join(self.directory, filename)
-        return add_green_tag(filepath)
+    def mark_as_kept(self, filepath: str) -> bool:
+        """Mark file as kept by adding G_ prefix."""
+        return mark_as_kept(filepath)
 
     @staticmethod
     def get_creation_time(filepath: str) -> float:
@@ -139,9 +138,8 @@ class ImageProcessor:
             if not os.path.isfile(filepath):
                 continue
                 
-            # Skip files that already have a green tag
-            tags = get_file_tags(filepath)
-            if any(tag.lower() == 'green' for tag in tags):
+            # Skip files that are marked as kept with G_ prefix
+            if is_kept_file(filepath):
                 continue
                 
             files.append(f)
