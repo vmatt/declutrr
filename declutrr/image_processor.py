@@ -1,11 +1,12 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 from os import PathLike
 import os
-import shutil
 import logging
+import shutil
 
 from PIL import Image
 from declutrr.constants import *
+from declutrr.tag_manager import get_file_tags, add_green_tag
 
 PathType = Union[str, PathLike[str]]
 
@@ -14,9 +15,7 @@ class ImageProcessor:
     def __init__(self, base_directory: str):
         self.directory = base_directory
         self.delete_dir = os.path.join(base_directory, 'delete')
-        self.keep_dir = os.path.join(base_directory, 'keep')
         os.makedirs(self.delete_dir, exist_ok=True)
-        os.makedirs(self.keep_dir, exist_ok=True)
 
     @staticmethod
     def load_image(filepath: str) -> Image.Image:
@@ -77,6 +76,16 @@ class ImageProcessor:
         """Move a file between directories."""
         source = os.path.join(source_dir, filename)
         destination = os.path.join(dest_dir, filename)
+        
+        # Ensure destination doesn't exist
+        if os.path.exists(destination):
+            base, ext = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(destination):
+                new_name = f"{base}_{counter}{ext}"
+                destination = os.path.join(dest_dir, new_name)
+                counter += 1
+                
         shutil.move(source, destination)
 
     def move_to_delete(self, filename: str) -> None:
@@ -87,13 +96,11 @@ class ImageProcessor:
         """Restore file from delete directory."""
         self.move_file(filename, self.delete_dir, self.directory)
 
-    def restore_from_keep(self, filename: str) -> None:
-        """Restore file from keep directory."""
-        self.move_file(filename, self.keep_dir, self.directory)
 
-    def move_to_keep(self, filename: str) -> None:
-        """Move file to keep directory."""
-        self.move_file(filename, self.directory, self.keep_dir)
+    def mark_as_keep(self, filename: str) -> bool:
+        """Mark file as keep by adding green tag."""
+        filepath = os.path.join(self.directory, filename)
+        return add_green_tag(filepath)
 
     @staticmethod
     def get_creation_time(filepath: str) -> float:
@@ -123,11 +130,21 @@ class ImageProcessor:
 
     def get_image_files(self) -> list[str]:
         """Get list of valid image files in directory, sorted by creation date."""
-        files = [
-            f for f in os.listdir(self.directory)
-            if f.lower().endswith(VALID_IMAGE_EXTENSIONS) and 
-            os.path.isfile(os.path.join(self.directory, f))
-        ]
+        files = []
+        for f in os.listdir(self.directory):
+            if not f.lower().endswith(VALID_IMAGE_EXTENSIONS):
+                continue
+                
+            filepath = os.path.join(self.directory, f)
+            if not os.path.isfile(filepath):
+                continue
+                
+            # Skip files that already have a green tag
+            tags = get_file_tags(filepath)
+            if any(tag.lower() == 'green' for tag in tags):
+                continue
+                
+            files.append(f)
         
         # Sort files by creation time (EXIF or filesystem)
         return sorted(

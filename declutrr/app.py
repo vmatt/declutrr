@@ -67,11 +67,9 @@ class ImageSorter:
         # Initialize image processor
         self.processor = ImageProcessor(self.directory)
         
-        # Initialize directories
+        # Initialize delete directory
         self.delete_dir = os.path.join(self.directory, 'delete')
-        self.keep_dir = os.path.join(self.directory, 'keep')
         os.makedirs(self.delete_dir, exist_ok=True)
-        os.makedirs(self.keep_dir, exist_ok=True)
 
         # Initialize UI components
         self.main_frame = None
@@ -295,7 +293,8 @@ class ImageSorter:
         if self.image_status.get(current_file) in ['deleted', 'kept']:
             return
             
-        self.processor.move_to_keep(current_file)
+        if not self.processor.mark_as_keep(current_file):
+            return  # Failed to add tag
         self.history.append((current_file, "keep"))
         self.stats["kept"] += 1
         self.image_status[current_file] = 'kept'
@@ -343,8 +342,8 @@ class ImageSorter:
             self.stats["deleted"] -= 1
             
         elif action == "keep":
-            # Move file back from keep folder
-            self.processor.restore_from_keep(filename)
+            # For keep actions, we can't remove the tag easily
+            # Just update our internal state
             self.stats["kept"] -= 1
             
         # Remove the status for this file, so it can be processed again
