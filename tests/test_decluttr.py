@@ -152,33 +152,41 @@ class TestImageSorter(unittest.TestCase):
         self.app.directory = os.path.join(FIXTURES_DIR, "test_photos")
         self.app.processor = ImageProcessor(self.app.directory)
         
+        # Setup UI components needed for test
+        self.app.setup_ui()
+        
         # Test undo delete
         self.app.history = [("test1.jpg", "delete")]
         self.app.stats = {"deleted": 1, "kept": 0}
+        self.app.image_files = ["test1.jpg"]
+        self.app.current_index = 0
         
-        with patch('os.path.exists') as mock_exists:
+        with patch('os.path.exists') as mock_exists, \
+             patch.object(self.app.processor, 'restore_from_delete') as mock_restore, \
+             patch.object(self.app, '_load_and_display_current_image'):
             mock_exists.return_value = True
-            with patch('shutil.move') as mock_move:
-                self.app.undo_last_action()
-                
-                # Verify the undo delete operation
-                self.assertEqual(self.app.history, [])
-                self.assertEqual(self.app.stats["deleted"], 0)
-                mock_move.assert_called_once()
+            self.app.undo_last_action()
+            
+            # Verify the undo delete operation
+            self.assertEqual(self.app.history, [])
+            self.assertEqual(self.app.stats["deleted"], 0)
+            mock_restore.assert_called_once_with("test1.jpg")
 
         # Test undo keep
-        self.app.history = [("test2.jpg", "keep")]
+        self.app.history = [("G_test2.jpg", "keep")]
         self.app.stats = {"deleted": 0, "kept": 1}
+        self.app.image_files = ["G_test2.jpg"]
         
-        with patch('os.path.exists') as mock_exists:
+        with patch('os.path.exists') as mock_exists, \
+             patch('declutrr.file_manager.unmark_as_kept') as mock_unmark:
             mock_exists.return_value = True
-            with patch('shutil.move') as mock_move:
-                self.app.undo_last_action()
-                
-                # Verify the undo keep operation
-                self.assertEqual(self.app.history, [])
-                self.assertEqual(self.app.stats["kept"], 0)
-                mock_move.assert_called_once()
+            mock_unmark.return_value = True
+            self.app.undo_last_action()
+            
+            # Verify the undo keep operation
+            self.assertEqual(self.app.history, [])
+            self.assertEqual(self.app.stats["kept"], 0)
+            mock_unmark.assert_called_once()
 
     def test_load_directory(self):
         """Test loading directory with images"""
@@ -223,9 +231,13 @@ class TestImageSorter(unittest.TestCase):
         self.app.image_files = ["test1.jpg", "test2.jpg"]
         self.app.current_index = 0
         
+        # Setup UI components needed for test
+        self.app.setup_ui()
+        
         # Test when all images are processed
         self.app.image_status = {"test1.jpg": "kept", "test2.jpg": "kept"}
-        with patch.object(self.app, '_show_completion_status') as mock_completion:
+        with patch.object(self.app, '_show_completion_status') as mock_completion, \
+             patch.object(self.app, '_load_and_display_current_image'):
             self.app.display_current_image()
             mock_completion.assert_called_once()
 
@@ -325,13 +337,13 @@ class TestImageSorter(unittest.TestCase):
             self.assertEqual(self.app.image_status["image.jpg"], "deleted")
             self.assertEqual(self.app.current_index, 1)
             self.assertTrue(os.path.exists(os.path.join(self.app.directory, "delete", "image.jpg")))
-            
+        
             # Test keep image
             self.app.keep_image()
             self.assertEqual(self.app.stats["kept"], 1)
-            self.assertEqual(self.app.image_status["photo.jpeg"], "kept")
+            self.assertEqual(self.app.image_status["G_photo.jpeg"], "kept")
             self.assertEqual(self.app.current_index, 2)
-            self.assertTrue(os.path.exists(os.path.join(self.app.directory, "keep", "photo.jpeg")))
+            self.assertTrue(os.path.exists(os.path.join(self.app.directory, "G_photo.jpeg")))
 
 if __name__ == '__main__':
     unittest.main()

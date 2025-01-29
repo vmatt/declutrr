@@ -204,6 +204,9 @@ class ImageSorter:
         
     def display_current_image(self) -> None:
         """Display the current image and update status."""
+        if not hasattr(self, 'status_var') or not self.status_var:
+            return
+            
         if self.current_index >= len(self.image_files):
             self.current_index = 0
             
@@ -236,9 +239,9 @@ class ImageSorter:
         
         ttk.Label(dialog_frame, text=COMPLETION_MESSAGE).pack(pady=10)
         
-        ttk.Button(dialog_frame, text="Process Another Folder", 
+        ttk.Button(dialog_frame, text="Process Another Folder (O)",
                   command=self.reset_and_restart).pack(pady=10)
-        ttk.Button(dialog_frame, text="Quit", 
+        ttk.Button(dialog_frame, text="Quit (Q)",
                   command=self.root.quit).pack(pady=10)
 
 

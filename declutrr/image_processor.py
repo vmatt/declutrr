@@ -26,6 +26,7 @@ class ImageProcessor:
         if not os.path.exists(filepath):
             return None
             
+        image = None
         try:
             image = Image.open(filepath)
             # Get EXIF data
