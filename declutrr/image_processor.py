@@ -20,8 +20,46 @@ class ImageProcessor:
 
     @staticmethod
     def load_image(filepath: str) -> Image.Image:
-        """Load an image from the given filepath."""
-        return Image.open(filepath)
+        """
+        Load an image from the given filepath and apply EXIF rotation if needed.
+        """
+        image = Image.open(filepath)
+        try:
+            # Get EXIF data
+            exif = image._getexif()
+            if exif is not None:
+                # EXIF orientation tag
+                orientation = exif.get(274)  # 274 is the orientation tag
+                if orientation is not None:
+                    # Create new image with correct dimensions for 90/270 degree rotations
+                    if orientation in [5, 6, 7, 8]:
+                        # For 90° or 270° rotations, swap width and height
+                        new_width = image.height
+                        new_height = image.width
+                        rotated_image = Image.new(image.mode, (new_width, new_height))
+                    else:
+                        rotated_image = Image.new(image.mode, image.size)
+
+                    # Rotate and/or flip based on EXIF orientation
+                    if orientation == 2:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 3:
+                        image = image.rotate(180, expand=True)
+                    elif orientation == 4:
+                        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+                    elif orientation == 5:
+                        image = image.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 6:
+                        image = image.rotate(-90, expand=True)
+                    elif orientation == 7:
+                        image = image.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 8:
+                        image = image.rotate(90, expand=True)
+
+        except Exception as e:
+            logging.warning(f"Error processing EXIF rotation for {filepath}: {e}")
+            
+        return image
 
     @staticmethod
     def get_display_dimensions(window_width: int, window_height: int) -> Tuple[int, int]:
