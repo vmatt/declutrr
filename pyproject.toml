@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "declutrr"
-version = "0.1.1"
+version = "0.1.2"
 description = "A Date-app-like interface for rapidly sorting photos"
 authors = ["Mate Valko <declutrr@valq.hu>"]
 license = "MIT"
