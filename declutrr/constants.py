@@ -20,6 +20,30 @@ STATUS_SKIPPED = 'skipped'
 ACTION_DELETE = "delete"
 ACTION_KEEP = "keep"
 
+# Key bindings and labels
+KEY_BINDINGS = {
+    'arrows': {
+        'delete': '<Left>',
+        'keep': '<Right>',
+        'skip': '<Down>',
+        'labels': {
+            'delete': '← Delete',
+            'keep': 'Keep →',
+            'skip': '↓ Skip'
+        }
+    },
+    'letters': {
+        'delete': 'j',
+        'keep': 'l',
+        'skip': 'k',
+        'labels': {
+            'delete': 'Delete (J)',
+            'keep': 'Keep (L)',
+            'skip': 'Skip (K)'
+        }
+    }
+}
+
 # UI Layout
 PADDING = {'padx': 5, 'pady': 5}
 

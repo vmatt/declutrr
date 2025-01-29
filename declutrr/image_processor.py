@@ -18,12 +18,16 @@ class ImageProcessor:
         os.makedirs(self.delete_dir, exist_ok=True)
 
     @staticmethod
-    def load_image(filepath: str) -> Image.Image:
+    def load_image(filepath: str) -> Image.Image | None:
         """
         Load an image from the given filepath and apply EXIF rotation if needed.
+        Returns None if file doesn't exist or can't be opened.
         """
-        image = Image.open(filepath)
+        if not os.path.exists(filepath):
+            return None
+            
         try:
+            image = Image.open(filepath)
             # Get EXIF data
             exif = image._getexif()
             if exif is not None:
