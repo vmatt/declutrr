@@ -1,6 +1,6 @@
 # 🎯 Declutrr
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://pypi.org/project/declutrr/)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://pypi.org/project/declutrr/)
 [![Coverage](https://img.shields.io/codecov/c/github/vmatt/declutrr)](https://codecov.io/gh/vmatt/declutrr)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
