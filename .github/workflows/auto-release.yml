@@ -1,4 +1,4 @@
-name: Create Release and Publish
+name: Create Release
 
 on:
   workflow_run:
@@ -39,11 +39,3 @@ jobs:
           prerelease: false
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and publish to PyPI
-        uses: JRubics/poetry-publish@v2.1
-        with:
-          pypi_token: ${{ secrets.PYPI_API_TOKEN }}
-          poetry_version: "1.7.1"
-          python_version: "3.11"
-          poetry_install_options: "--with dev"
