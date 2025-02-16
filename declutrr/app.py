@@ -85,9 +85,11 @@ class ImageSorter:
         # Initialize image processor
         self.processor = ImageProcessor(self.directory)
         
-        # Initialize delete directory
+        # Initialize directories
         self.delete_dir = os.path.join(self.directory, 'delete')
+        self.keep_dir = os.path.join(self.directory, 'keep')
         os.makedirs(self.delete_dir, exist_ok=True)
+        os.makedirs(self.keep_dir, exist_ok=True)
 
         # Initialize UI components
         self.main_frame = None
@@ -273,18 +275,6 @@ class ImageSorter:
         filename = self.image_files[self.current_index]
         filepath = os.path.join(self.directory, filename)
         self.current_image = self.processor.load_image(filepath)
-        
-        if self.current_image is None:
-            # File was deleted or can't be opened, mark it as deleted
-            self.image_status[filename] = STATUS_DELETED
-            self.stats[STATUS_DELETED] += 1
-            # Move to next image
-            self.current_index += 1
-            if self.current_index >= len(self.image_files):
-                self.current_index = 0
-            self.display_current_image()
-            return
-            
         self.resize_image()
 
     def _update_status_bar(self) -> None:
@@ -360,11 +350,7 @@ class ImageSorter:
         if self.image_status.get(current_file) in ['deleted', 'kept']:
             return
             
-        filepath = os.path.join(self.directory, current_file)
-        if not self.processor.mark_as_kept(filepath):
-            return  # Failed to rename file
-        # Update current_file to include G_ prefix
-        current_file = f"G_{current_file}"
+        self.processor.move_to_keep(current_file)
         self.history.append((current_file, "keep"))
         self.stats["kept"] += 1
         self.image_status[current_file] = 'kept'
@@ -412,12 +398,9 @@ class ImageSorter:
             self.stats["deleted"] -= 1
             
         elif action == "keep":
-            # Remove G_ prefix from filename
-            filepath = os.path.join(self.directory, filename)
-            if os.path.exists(filepath):
-                from declutrr.file_manager import unmark_as_kept
-                if unmark_as_kept(filepath):
-                    self.stats["kept"] -= 1
+            # Move file back from keep folder
+            self.processor.restore_from_keep(filename)
+            self.stats["kept"] -= 1
             
         # Remove the status for this file, so it can be processed again
         if filename in self.image_status:

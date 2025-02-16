@@ -1,9 +1,6 @@
 # Image file extensions
 VALID_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png')
 
-# File prefixes
-KEPT_PREFIX = 'G_'
-
 # UI Constants
 INITIAL_WINDOW_SIZE = "900x700"
 WINDOW_PADDING = 40
